@@ -3,7 +3,7 @@ import smb
 import time
 import file
 import docker_c
-import datetime
+import logs
 
 
 zidoo_ip_address = zidoo.get_zidoo_address()
@@ -17,11 +17,11 @@ if __name__ == "__main__":
         zidoo_ip_address = zidoo.get_zidoo_address()
         # 如果返回值是False则表示没有获取到内网芝杜的IP地址，则尝试获取
         if zidoo_ip_address == False:
-            print(str(datetime.datetime.now())+"Error getting Zidoo IP address.")
-            print(str(datetime.datetime.now())+"没有获取到局域网内的芝杜IP地址，正在尝试重新获取")
+            logs.output_logs("Error getting Zidoo IP address.")
+            logs.output_logs("没有获取到局域网内的芝杜IP地址，正在尝试重新获取")
             continue
         
-        print(str(datetime.datetime.now())+"芝杜的IP地址为：" + zidoo_ip_address)
+        logs.output_logs("芝杜的IP地址为：" + zidoo_ip_address)
         
         time.sleep(1)
         
@@ -29,14 +29,15 @@ if __name__ == "__main__":
         if smb.check_smb_service(zidoo_ip_address) == False:
             print("SMB service is not available.")
             continue
-        print(str(datetime.datetime.now())+"芝杜播放器的SMB服务正常开启")
+        
+        logs.output_logs("芝杜播放器的SMB服务正常开启")
         
         time.sleep(1)
         
         # 获取SMB Share
         share_files = smb.get_smb_share(zidoo_ip_address)
         if share_files == False:
-            print(str(datetime.datetime.now())+"Error getting SMB share.")
+            logs.output_logs("Error getting SMB share.")
             continue
         
         # 处理share_files列表
@@ -57,31 +58,32 @@ if __name__ == "__main__":
         
         # 检查挂载情况
         if smb.check_cifs_mount(directory):
-            print(str(datetime.datetime.now())+f"{directory} is mounted and operational.")
+            logs.output_logs(f"{directory} is mounted and operational.")
         else:
-            print(str(datetime.datetime.now())+f"{directory} is not properly mounted.")
-            print(str(datetime.datetime.now())+"正在重新生成配置文件")
+            logs.output_logs(f"{directory} is not properly mounted.")
+            logs.output_logs("正在重新生成配置文件")
             time.sleep(1)
             # 生成配置文件
             smb.generate_config_file(config_file_path, zidoo_ip_address, "Share/"+share_files[0])
-            print(str(datetime.datetime.now())+"正在重启相关文件挂载服务器")
+            
+            logs.output_logs("正在重启相关文件挂载服务器")
             time.sleep(1)
             # 重启 CIFS 服务
             flag = smb.restart_cifs_service()
             if flag == False:
-                print(str(datetime.datetime.now())+"CIFS 挂载 芝杜SMB失败，30秒后重试")
+                logs.output_logs("CIFS 挂载 芝杜SMB失败，30秒后重试")
                 continue
-            print(str(datetime.datetime.now())+"正在刷新挂载缓存")
+            logs.output_logs("正在刷新挂载缓存")
             time.sleep(1)
             # 刷新挂载缓存
             smb.refresh_mount_cache("/mnt/zidoo")
             time.sleep(1)
             # 检查相关路径文件，如果没有则创建
-            print(str(datetime.datetime.now())+"正在检查相关路径文件")
+            logs.output_logs("正在检查相关路径文件")
             file.create_media_structure()
             time.sleep(1)
             # 重启受到影响的容器
-            print(str(datetime.datetime.now())+"正在重启受到影响的容器")
+            logs.output_logs("正在重启受到影响的容器")
             docker_c.restart_qbittorret()
             time.sleep(1)
             continue

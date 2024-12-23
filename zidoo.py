@@ -2,7 +2,7 @@ import socket
 import time
 import uuid
 import psutil
-import datetime
+import logs
 
 DISCOVER_HOST = "239.39.3.9"  # 多播地址
 DISCOVER_PORT = 18239  # 端口号
@@ -49,14 +49,14 @@ def delay_notify_join():
         # 发送到多播地址
         mDiscoverSocket.sendto(message, (DISCOVER_HOST, DISCOVER_PORT))
     except Exception as e:
-        print(str(datetime.datetime.now())+f"Error sending message: {e}")
+        logs.output_logs(f"Error sending message: {e}")
         
 def parse_device(data):
     try:
         # 假设设备信息是按照特定格式传输的，我们直接打印数据
-        print(str(datetime.datetime.now())+f"Device Info: {data.decode('utf-8')}")
+        logs.output_logs(f"Device Info: {data.decode('utf-8')}")
     except Exception as e:
-        print(str(datetime.datetime.now())+f"Error parsing device data: {e}")
+        logs.output_logs(f"Error parsing device data: {e}")
 
 # 监听来自组内设备的消息，带超时机制
 def get_zidoo_address(timeout=TIMEOUT):
@@ -67,13 +67,13 @@ def get_zidoo_address(timeout=TIMEOUT):
         try:
             # 读取数据包
             data, addr = mDiscoverSocket.recvfrom(512)
-            print(str(datetime.datetime.now())+f"Received message from {addr}")
+            logs.output_logs(f"Received message from {addr}")
             
             
             # 如果接收到的消息来自本机，则忽略
             if addr[0] == local_ip:
-                print(str(datetime.datetime.now())+"Received message from self, ignore")
-                print(str(datetime.datetime.now())+"--------------------------------------------------------")
+                logs.output_logs("Received message from self, ignore")
+                logs.output_logs("--------------------------------------------------------")
                 continue
             # 解析设备信息
             parse_device(data)
@@ -83,9 +83,9 @@ def get_zidoo_address(timeout=TIMEOUT):
             
         except socket.timeout:
             # 超过超时时间仍未接收到数据包
-            print(str(datetime.datetime.now())+f"No response within {TIMEOUT} seconds.")
+            logs.output_logs(f"No response within {TIMEOUT} seconds.")
             return False  # 返回错误，超时
         
         except Exception as e:
-            print(str(datetime.datetime.now())+f"Error receiving message: {e}")
+            logs.output_logs(f"Error receiving message: {e}")
             time.sleep(1)  # 可加入延时，防止频繁出现错误
